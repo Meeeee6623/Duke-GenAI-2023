@@ -1,3 +1,17 @@
+default_class = {
+    "class": "DefaultClass",
+    "description": "Default class",
+    "vectorizer": "text2vec-openai",
+    "properties": [
+        {
+            "name": "text",
+            "description": "Text field",
+            "dataType": ["string"],
+        }
+    ]
+}
+
+
 yt_playlist_class = {
     "class": "YoutubePlaylist",
     "description": "Youtube Playlist",

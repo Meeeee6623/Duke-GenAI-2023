@@ -1,7 +1,9 @@
 import os
+from dotenv import load_dotenv
 
-WEAVIATE_CLIENT_URL = ""
-WEAVIATE_API_KEY = os.environ["WEAVIATE_API_KEY"]
+load_dotenv()
+
+WEAVIATE_CLIENT_URL = "http://54.81.235.123:8080/v1"
 
 MONGODB_URL = os.environ["MONGODB_URL"]
 MONGODB_DB = 'ai-server'

@@ -7,7 +7,7 @@ import requests
 from app.utils.queries import get_top_k_playlists, search_playlist
 from app.utils.youtube import get_yt_playlists
 from app.utils.upload_videos import upload_videos
-
+from app.utils.openai_connector import call_llm
 
 openai.api_key = os.getenv("OPENAI_APIKEY")
 
@@ -17,24 +17,6 @@ playlist_ids = ["video1", "video2", "video3"]
 # Create a list to store the selected videos
 selected_playlists = []
 
-# Display the videos and checkboxes in the sidebar
-if playlist_ids is not None:
-    with st.sidebar:
-        st.title("Select Videos")
-        for playlist_id in playlist_ids:
-            # Fetch the YouTube video thumbnail
-            response = requests.get(
-                f"https://img.youtube.com/vi/{playlist_id}/default.jpg"
-            )
-            thumbnail_url = response.url
-
-            # Display the thumbnail and checkbox
-            st.image(thumbnail_url, width=250)
-            checkbox_label = f"Select {playlist_id}"
-
-            checkbox = st.checkbox(checkbox_label)
-            if checkbox:
-                selected_playlists.append(playlist_id)
 
 # Save the selected videos as a variable
 st.session_state["selected_playlists"] = selected_playlists
@@ -44,12 +26,11 @@ if "messages" not in st.session_state:
     st.session_state["messages"] = [
         {
             "role": "assistant",
-            "content": "How can I help you? I can learn and teach you anything!",
+            "content": "How can I help you? I can learn from Youtube and teach you just about anything!",
         }
     ]
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
-
 
 if query := st.chat_input():
     # main logic here
@@ -92,7 +73,7 @@ Ok I'm the student, let's begin!
     )
 
     group_dict = parse(response_text, ["[S]", "[T]", "[B]"])
-    #testing
+    # testing
     st.write(group_dict)
     if group_dict is None:
         # if the response has [D] - meaning we want to ask the user another question:
@@ -123,10 +104,28 @@ Ok I'm the student, let's begin!
                 system_prompt = f""" {topic_context_dict} I am an AI trained to talk to you! How can I assist you today?"""
             else:
                 # we need to search YT for a playlist and let a user choose stuff
-            
-        
-        
-        
+                youtube_query = group_dict.get("[T]")
+                youtube_query.append(group_dict.get("[S]"))
+                playlist_ids = get_yt_playlists(youtube_query, k=3)
+                # Display the videos and checkboxes in the sidebar
+                if playlist_ids is not None:
+                    with st.sidebar:
+                        st.title("Select Videos")
+                        for playlist_id in playlist_ids:
+                            # Fetch the YouTube video thumbnail
+                            response = requests.get(
+                                f"https://img.youtube.com/vi/{playlist_id}/default.jpg"
+                            )
+                            thumbnail_url = response.url
+
+                            # Display the thumbnail and checkbox
+                            st.image(thumbnail_url, width=250)
+                            checkbox_label = f"Select {playlist_id}"
+
+                            checkbox = st.checkbox(checkbox_label)
+                            if checkbox:
+                                selected_playlists.append(playlist_id)
+
         # Get the response from the LLM call function
         response_text, conversation, total_tokens, response = call_llm(
             user_query=query, conversation=None, system_prompt=system_prompt
@@ -143,6 +142,7 @@ Ok I'm the student, let's begin!
 
 # parsing function
 import re
+
 
 def parse(text, groups):
     group_dict = {}

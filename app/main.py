@@ -10,28 +10,29 @@ openai.api_key = os.getenv("OPENAI_APIKEY")
 playlist_ids = ["video1", "video2", "video3"]
 
 # Create a list to store the selected videos
-selected_videos = []
+selected_playlists = []
 
 # Display the videos and checkboxes in the sidebar
-with st.sidebar:
-    st.title("Select Videos")
-    for playlist_id in playlist_ids:
-        # Fetch the YouTube video thumbnail
-        response = requests.get(f"https://img.youtube.com/vi/{playlist_id}/default.jpg")
-        thumbnail_url = response.url
+if playlist_ids is not None:
+    with st.sidebar:
+        st.title("Select Videos")
+        for playlist_id in playlist_ids:
+            # Fetch the YouTube video thumbnail
+            response = requests.get(f"https://img.youtube.com/vi/{playlist_id}/default.jpg")
+            thumbnail_url = response.url
 
-        # Display the thumbnail and checkbox
-        st.image(thumbnail_url)
-        checkbox_label = f"Select {playlist_id}"
-        st.write(checkbox_label)
-        checkbox = st.checkbox(checkbox_label)
-        if checkbox:
-            selected_videos.append(playlist_id)
+            # Display the thumbnail and checkbox
+            st.image(thumbnail_url, width=250)
+            checkbox_label = f"Select {playlist_id}"
+       
+            checkbox = st.checkbox(checkbox_label)
+            if checkbox:
+                selected_playlists.append(playlist_id)
 
 # Save the selected videos as a variable
-st.session_state["selected_videos"] = selected_videos
+st.session_state["selected_playlists"] = selected_playlists
 
-st.title("💬 LOLA: Learn Online Like Actually")
+st.title("💬  LOLA: Learn Online Like Actually")
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
         {
@@ -47,7 +48,6 @@ for msg in st.session_state.messages:
 if prompt := st.chat_input():
     # main logic here
     # need checks if we have data and etc
-    
 
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)

@@ -1,10 +1,10 @@
 """
 Code to chunk and upload videos to Weaviate
 """
-from app.utils.data_changes import upload_topic
+from app.utils.data_changes import upload_topic, create_playlist
 from app.utils.queries import check_video
-from app.utils.youtube import get_videos, get_transcript
-from app.utils.openai_connector import get_video_topics
+from app.utils.youtube import get_videos, get_transcript, get_playlist_info
+from app.utils.openai_connector import get_video_topics, call_llm
 
 
 def upload_videos(playlist_id):
@@ -15,6 +15,28 @@ def upload_videos(playlist_id):
     """
     # get all videos from playlist
     videos = get_videos(playlist_id)
+    playlist_info = get_playlist_info(playlist_id)
+    # get playlist description with openai call on video titles
+    synthetic_description = call_llm(f"""
+    Write a playlist description for a playlist titled "{playlist_info['title']}".
+    The playlist contains the following videos:
+    {[video['title'] for video in videos]}
+    Make sure the description is short but detailed, Roughly 1-2 sentences.
+
+    For example, a playlist named "How to make a cake" with the following videos:
+    "1. What is a cake"
+    "2. How to make a cake"
+    "3. How to bake a cake"
+    "4. Different types of cakes"
+    should have a description like:
+    "Information about cakes: What cakes are, how to make cakes, how to bake cakes, and different types of cakes."
+
+    Keep everything succinct, and prefer to add "buzz words" or "key words" over long sentence descriptions.
+    Avoid starting with "This playlist provides..." or "This playlist is about...". Just get right into the content
+    """)
+    playlist_description = synthetic_description[0]
+    # upload playlist to weaviate
+    create_playlist(playlist_id, playlist_info["title"], playlist_description)
     all_topics = []
     for video in videos:
         print(f"Uploading video {video['title']}")

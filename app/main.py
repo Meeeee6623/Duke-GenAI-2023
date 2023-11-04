@@ -3,14 +3,12 @@ import os
 import requests
 import threading
 
-
 from app.utils.queries import get_top_k_playlists, search_playlist
 from app.utils.youtube import get_yt_playlists
 from app.utils.upload_videos import upload_videos
 from app.utils.openai_connector import call_llm
 
 import dotenv
-
 
 # parsing function
 import re
@@ -64,7 +62,6 @@ if "messages" not in st.session_state:
         }
     ]
 
-
 # Display the chat messages that exist
 
 for msg in st.session_state.messages:
@@ -73,7 +70,6 @@ for msg in st.session_state.messages:
     else:
         st.chat_message(msg["role"]).write(msg["content"])
 
-
 # Create a list to store the selected videos
 if "selected_playlists" not in st.session_state:
     st.session_state["selected_playlists"] = []
@@ -81,7 +77,8 @@ if "topic_context_info" not in st.session_state:
     st.session_state["topic_context_info"] = []
 if "end" not in st.session_state:
     st.session_state["end"] = False
-
+if "topics_covered" not in st.session_state:
+    st.session_state["topics_covered"] = []
 
 if "stage" not in st.session_state:
     st.session_state["stage"] = "chat"
@@ -104,10 +101,10 @@ if st.session_state["stage"] == "chat":
 
         group_dict = parse(response_text, ["S", "T", "B"])
         print(group_dict)
+        group_dict["S"] = ["BMW Cars and engines from a beginner's perspective"]
+        group_dict["T"] = ["bmw car models", "bmw car engines"]
         st.write(group_dict)  # Just another testing
-        group_dict["S"] = {" we are learing about cars"}
-        group_dict["T"] = {"bmw car engine specs"}
-        if group_dict["S"] == []:  # todo check this
+        if not group_dict["S"]:  # maybe check T here too?
             # Update the session state messages with the assistant's response
             st.session_state.messages.append(
                 {"role": "assistant", "content": response_text}
@@ -123,6 +120,8 @@ if st.session_state["stage"] == "chat":
             st.session_state.topics = group_dict["T"]
             ################################################################
             for topic in st.session_state.topics:
+                if topic in st.session_state.topics_covered:
+                    continue
                 # do the loop for each topic
                 # prompt 3 - for each topic compare it to the weaviate playlist context
                 # if topic matches a playlist -> playlist_id = match
@@ -136,24 +135,28 @@ if st.session_state["stage"] == "chat":
                 playlist_text = ""
                 for playlist in top_k_playlists:
                     playlist_text += f"Title: {playlist['title']}, Description: {playlist['description']} \n"
-                playlist_match = f"""You are provided with a list of playlists, each with a unique identifier and a description. Your task is to determine if any of these playlists contain information that matches a specific topic.
-                    Given topic: {topic}\n
+                playlist_match = f"""
+                You are provided with a list of playlists, each with a unique identifier and a description. Your task is to determine if any of these playlists contain information that matches a 
+                specific topic. Given topic: {topic}\n
                     Playlists:\n
-                    {playlist_text}
-                    Review each playlist description and identify if it closely matches the given topic. If a playlist's description matches the topic, output the playlist's ID next to [P]. If none of the playlist descriptions match the topic, simply output 'no'.
-                    What is your output?"""
+                    {playlist_text} 
+                    Review each playlist description and identify if it closely matches the given 
+                    topic. If a playlist's description matches the topic, output each playlist's ID after a [P]. If 
+                    none of the playlist descriptions match the topic, simply output 'no'. What is your output?"""
 
                 # Get the response from the LLM call function
                 response_text, conversation, total_tokens, response = call_llm(
                     user_query=playlist_match, conversation=None
                 )
                 st.write(f"Playlist Match Prompt: {playlist_match}")
-                st.write(f"parse playlist: {response_text}")
+                st.write(f"Response Text: {response_text}")
                 # todo how many playlists are we getting?
                 playlist_id = parse(response_text, ["P"])["P"]
                 st.write(f"playlist id: {playlist_id}")
 
-                if playlist_id != []:
+                if playlist_id:
+                    for p_id in playlist_id:
+                        st.session_state.topics_covered.append({topic: p_id})
                     # we have the playlist with info
                     top_topic = search_playlist(playlist_id, query, k=1)
                     info = {
@@ -163,16 +166,20 @@ if st.session_state["stage"] == "chat":
                     st.session_state.topic_context_info.append(info)
 
                 else:
+                    # st.selecting playlist -> true
+                    # select playlist for topic
+                    # click submit -> select playlist false? continue loop
                     # we need to search YT for a playlist and let a user choose stuff
                     playlist_data = get_yt_playlists(topic, k=3)
 
                     # Display the videos and checkboxes in the sidebar
-                    st.session_state["stage"] == "playlist_selected"
+                    st.session_state["stage"] = "playlist_selected"
+                    st.session_state["playlist_data"] = playlist_data
                     st.rerun()
 elif st.session_state["stage"] == "playlist_selected":
     with st.sidebar:
         st.title("Select Videos - each one takes a minute")
-        for playlist in playlist_data:
+        for playlist in st.session_state.playlist_data:
             # Fetch the YouTube video thumbnail
             thumbnail_url = playlist["thumbnail"]
 
@@ -190,6 +197,7 @@ elif st.session_state["stage"] == "playlist_selected":
                 # Start a new thread for each upload_videos call
                 st.write(f"loading in video data from the playlist {playlist_id}")
                 threading.Thread(target=upload_videos, args=(playlist_id,)).start()
+
 
         # we have the playlist with info
         top_topic = search_playlist(playlist_id, query, k=1)
@@ -218,7 +226,6 @@ elif st.session_state["stage"] == "respond":
     # Write the assistant response to the chat
     st.chat_message("assistant").write(response_text)
     st.session_state["end"] = True
-
 
 # As long as query not empty make it input
 while st.session_state["end"]:

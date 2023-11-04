@@ -3,8 +3,11 @@ import time
 import openai
 import tiktoken
 
+from app.utils.config import OPENAI_API_KEY
 
-def call_llm(user_query, conversation=None, system_prompt=None, model="gpt3.5-turbo", temperature=0) -> tuple[
+openai.api_key = OPENAI_API_KEY
+
+def call_llm(user_query, conversation=None, system_prompt=None, model="gpt-3.5-turbo", temperature=0) -> tuple[
     str, list[dict], int, openai.ChatCompletion]:
     """
     :param user_query:
@@ -16,9 +19,9 @@ def call_llm(user_query, conversation=None, system_prompt=None, model="gpt3.5-tu
         conversation = []
     if system_prompt is not None:
         if conversation[0]["role"] != "system":
-            conversation.insert(0, {"role": "system", "text": system_prompt})
+            conversation.insert(0, {"role": "system", "content": system_prompt})
 
-    conversation.append({"role": "user", "text": user_query})
+    conversation.append({"role": "user", "content": user_query})
 
     # switch the model if it is beyond the token limit
     tokenizer = tiktoken.get_encoding("cl100k_base")

@@ -1,7 +1,6 @@
 import streamlit as st
 
 from app.utils.youtube import get_playlist_info, get_videos
-from app.utils.openai_connector import get_video_topics
 
 st.set_page_config(page_title="Youtube Playlist Manual Uploader", page_icon=":notes:")
 

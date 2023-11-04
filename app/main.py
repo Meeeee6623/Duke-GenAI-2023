@@ -170,19 +170,12 @@ What is your output?"""
 
 
 # function names
-
-# system prompt function
-
-    
-    
-    
-    
     
 # data is a dictionary that has like [s] : short descriptions, [T] : topic etc ...], [B] : behavior
-data = parse_response(response)
+# data = parse_response(response)
 
 # weaviate query for top k playlists:
-# get_top_k_playlists(query, k)
+#get_top_k_playlists(query, k)
 
 # youtube search for top k playlists:
 # get_yt_playlists(query, k)

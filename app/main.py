@@ -1,38 +1,58 @@
+# First
+import openai
 import streamlit as st
-import pandas as pd
-import numpy as np
+import os
 
-st.title('Uber pickups in NYC')
+openai.api_key = os.getenv("OPENAI_APIKEY")
 
-DATE_COLUMN = 'date/time'
-DATA_URL = ('https://s3-us-west-2.amazonaws.com/'
-            'streamlit-demo-data/uber-raw-data-sep14.csv.gz')
+import requests
 
+# Define the YouTube video IDs
+video_ids = ["video1", "video2", "video3"]
 
-@st.cache_data
-def load_data(nrows):
-    data = pd.read_csv(DATA_URL, nrows=nrows)
-    lowercase = lambda x: str(x).lower()
-    data.rename(lowercase, axis='columns', inplace=True)
-    data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN])
-    return data
+# Create a list to store the selected videos
+selected_videos = []
 
+# Display the videos and checkboxes in the sidebar
+with st.sidebar:
+    st.title("Select Videos")
+    for video_id in video_ids:
+        # Fetch the YouTube video thumbnail
+        response = requests.get(f"https://img.youtube.com/vi/{video_id}/default.jpg")
+        thumbnail_url = response.url
 
-data_load_state = st.text('Loading data...')
-data = load_data(10000)
-data_load_state.text("Done! (using st.cache_data)")
+        # Display the thumbnail and checkbox
+        thumbnail = f'<img src="{thumbnail_url}" alt="Thumbnail" width="200">'
+        checkbox_label = f"{thumbnail} Video {video_id}"
+        st.write(checkbox_label)
+        checkbox = st.checkbox(checkbox_label)
+        if checkbox:
+            selected_videos.append(video_id)
 
-if st.checkbox('Show raw data'):
-    st.subheader('Raw data')
-    st.write(data)
+# Save the selected videos as a variable
+st.session_state["selected_videos"] = selected_videos
 
-st.subheader('Number of pickups by hour')
-hist_values = np.histogram(data[DATE_COLUMN].dt.hour, bins=24, range=(0, 24))[0]
-st.bar_chart(hist_values)
+st.title("💬 LOLA: Learn Online Like Actually")
+if "messages" not in st.session_state:
+    st.session_state["messages"] = [
+        {
+            "role": "assistant",
+            "content": "How can I help you? I can learn and teach you anything!",
+        }
+    ]
 
-# Some number in the range 0-23
-hour_to_filter = st.slider('hour', 0, 23, 17)
-filtered_data = data[data[DATE_COLUMN].dt.hour == hour_to_filter]
+for msg in st.session_state.messages:
+    st.chat_message(msg["role"]).write(msg["content"])
 
-st.subheader('Map of all pickups at %s:00' % hour_to_filter)
-st.map(filtered_data)
+if prompt := st.chat_input():
+    # main logic here
+    # need checks if we have data and etc
+
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.chat_message("user").write(prompt)
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo", messages=st.session_state.messages
+    )
+    msg = response.choices[0].message
+    st.session_state.messages.append(msg)
+    st.chat_message("assistant").write(msg.content)

@@ -119,7 +119,10 @@ if query := st.chat_input():
             # if topic matches a playlist -> playlist_id = match
             # if doesn't match -> search yt, then prompt user for playlist
             # prompt number 3
-            playlist_text = get_yt_playlist_texts(topic, k=3)
+            top_k_playlists = get_top_k_playlists(topic, k=3)
+            playlist_text = ""
+            for playlist in top_k_playlists:
+                playlist_text += f"Title: {playlist['title']}, Description: {playlist['description']} \n"
             playlist_match = f"""You are provided with a list of playlists, each with a unique identifier and a description. Your task is to determine if any of these playlists contain information that matches a specific topic.
             Given topic: {topic}
             Playlists:

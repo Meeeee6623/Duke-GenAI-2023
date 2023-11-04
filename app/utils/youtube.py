@@ -27,23 +27,6 @@ def get_yt_playlists(query, num_playlists=5):
     return playlists
 
 
-# get texts for system prompt
-def get_yt_playlist_texts(query, num_playlists=5):
-    response = (
-        yt.search()
-        .list(part="snippet", q=query, type="playlist", maxResults=num_playlists)
-        .execute()
-    )
-    playlist_texts = []
-
-    for item in response["items"]:
-        playlist_id = item["id"]["playlistId"]
-        description = item["snippet"]["description"]
-        playlist_texts.append(f"ID: {playlist_id}, Description: {description} ")
-
-    return playlist_texts
-
-
 def get_videos(playlist_id):
     """
     Get all video titles, descriptions, IDs from a playlist

@@ -2,6 +2,7 @@ import openai
 import streamlit as st
 import os
 import requests
+import threading
 
 
 from app.utils.queries import get_top_k_playlists, search_playlist
@@ -69,7 +70,7 @@ Ok I'm the student, let's begin!
 
     # Get the response from the LLM call function
     response_text, conversation, total_tokens, response = call_llm(
-        user_query=query, conversation=None, system_prompt=system_prompt
+        user_query=query, conversation=st.session_state.messages, system_prompt=system_prompt
     )
 
     group_dict = parse(response_text, ["[S]", "[T]", "[B]"])
@@ -110,7 +111,7 @@ Ok I'm the student, let's begin!
                 # Display the videos and checkboxes in the sidebar
                 if playlist_ids is not None:
                     with st.sidebar:
-                        st.title("Select Videos")
+                        st.title("Select Videos - each one takes a minute")
                         for playlist_id in playlist_ids:
                             # Fetch the YouTube video thumbnail
                             response = requests.get(
@@ -125,10 +126,15 @@ Ok I'm the student, let's begin!
                             checkbox = st.checkbox(checkbox_label)
                             if checkbox:
                                 selected_playlists.append(playlist_id)
+                    for playlist_id in selected_playlists:
+                        # Start a new thread for each upload_videos call
+                        threading.Thread(
+                            target=upload_videos, args=(playlist_id,)
+                        ).start()
 
         # Get the response from the LLM call function
         response_text, conversation, total_tokens, response = call_llm(
-            user_query=query, conversation=None, system_prompt=system_prompt
+            user_query=query, conversation=st.session_state.messages, system_prompt=system_prompt
         )
         st.session_state.messages.append(
             {"role": "assistant", "content": response_text}

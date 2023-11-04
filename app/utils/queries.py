@@ -1,7 +1,7 @@
 """
 Contains various weaviate queries relating to classes
 """
-from .weaviate_connector import db
+from app.utils.weaviate_connector import db
 
 
 # function names
@@ -16,10 +16,11 @@ def get_top_k_playlists(query, k):
     near_text = {
         "concepts": [f"{query}"],
     }
-    playlists = (db.query.get("YoutubePlaylist", ["title", "description"])
-    .with_limit(k)
-    .with_near_text(near_text)
-    .do()["data"]["Get"]["YoutubePlaylist"]
+    playlists = (
+        db.query.get("YoutubePlaylist", ["title", "description"])
+        .with_limit(k)
+        .with_near_text(near_text)
+        .do()["data"]["Get"]["YoutubePlaylist"]
     )
     return playlists
 
@@ -41,11 +42,12 @@ def search_playlist(playlist_id, query, k):
         "operator": "Equal",
         "valueString": playlist_id,
     }
-    videos = (db.query.get("YoutubeTopic", ["title", "description"])
-    .with_limit(k)
-    .with_where(where_filter)
-    .with_near_text(near_text)
-    .do()["data"]["Get"]["YoutubeVideo"]
+    videos = (
+        db.query.get("YoutubeTopic", ["title", "description"])
+        .with_limit(k)
+        .with_where(where_filter)
+        .with_near_text(near_text)
+        .do()["data"]["Get"]["YoutubeVideo"]
     )
     return videos
 
@@ -115,6 +117,7 @@ def check_video(video_id):
         print(e)
         return False
     return False
+
 
 def check_playlist(playlist_id):
     """

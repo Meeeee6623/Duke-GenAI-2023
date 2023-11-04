@@ -3,22 +3,45 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 from app.utils.config import YT_API_KEY
 
-yt = build('youtube', 'v3', developerKey=YT_API_KEY)
+yt = build("youtube", "v3", developerKey=YT_API_KEY)
 
 
 def get_yt_playlists(query, num_playlists=5):
     # get playlist IDs, title, description, and thumbnail for top 5 playlists
-    response = yt.search().list(part="snippet", q=query, type="playlist", maxResults=num_playlists).execute()
+    response = (
+        yt.search()
+        .list(part="snippet", q=query, type="playlist", maxResults=num_playlists)
+        .execute()
+    )
     playlists = []
 
-    for item in response['items']:
-        playlists.append({
-            'id': item['id']['playlistId'],
-            'title': item['snippet']['title'],
-            'description': item['snippet']['description'],
-            'thumbnail': item['snippet']['thumbnails']['default']['url']
-        })
+    for item in response["items"]:
+        playlists.append(
+            {
+                "id": item["id"]["playlistId"],
+                "title": item["snippet"]["title"],
+                "description": item["snippet"]["description"],
+                "thumbnail": item["snippet"]["thumbnails"]["default"]["url"],
+            }
+        )
     return playlists
+
+
+# get texts for system prompt
+def get_yt_playlist_texts(query, num_playlists=5):
+    response = (
+        yt.search()
+        .list(part="snippet", q=query, type="playlist", maxResults=num_playlists)
+        .execute()
+    )
+    playlist_texts = []
+
+    for item in response["items"]:
+        playlist_id = item["id"]["playlistId"]
+        description = item["snippet"]["description"]
+        playlist_texts.append(f"ID: {playlist_id}, Description: {description} ")
+
+    return playlist_texts
 
 
 def get_videos(playlist_id):
@@ -27,18 +50,20 @@ def get_videos(playlist_id):
     :param playlist_id: playlist to get videos from
     :return:
     """
-    response = yt.playlistItems().list(
-        part="snippet",
-        playlistId=playlist_id,
-        maxResults=50
-    ).execute()
+    response = (
+        yt.playlistItems()
+        .list(part="snippet", playlistId=playlist_id, maxResults=50)
+        .execute()
+    )
     videos = []
-    for item in response['items']:
-        videos.append({
-            'id': item['snippet']['resourceId']['videoId'],
-            'title': item['snippet']['title'],
-            'description': item['snippet']['description']
-        })
+    for item in response["items"]:
+        videos.append(
+            {
+                "id": item["snippet"]["resourceId"]["videoId"],
+                "title": item["snippet"]["title"],
+                "description": item["snippet"]["description"],
+            }
+        )
     return videos
 
 
@@ -58,13 +83,10 @@ def get_playlist_info(playlistID):
     :param playlistID:
     :return:
     """
-    response = yt.playlists().list(
-        part="snippet",
-        id=playlistID
-    ).execute()
-    playlist = response['items'][0]
+    response = yt.playlists().list(part="snippet", id=playlistID).execute()
+    playlist = response["items"][0]
     return {
-        'title': playlist['snippet']['title'],
-        'description': playlist['snippet']['description'],
-        'thumbnail': playlist['snippet']['thumbnails']['default']['url']
+        "title": playlist["snippet"]["title"],
+        "description": playlist["snippet"]["description"],
+        "thumbnail": playlist["snippet"]["thumbnails"]["default"]["url"],
     }

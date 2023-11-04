@@ -6,21 +6,35 @@ import threading
 
 
 from app.utils.queries import get_top_k_playlists, search_playlist
-from app.utils.youtube import get_yt_playlists
+from app.utils.youtube import get_yt_playlists, get_yt_playlist_texts
 from app.utils.upload_videos import upload_videos
 from app.utils.openai_connector import call_llm
 
 openai.api_key = os.getenv("OPENAI_APIKEY")
 
-# Define the YouTube video IDs
-playlist_ids = ["video1", "video2", "video3"]
+
+
+# parsing function
+import re
+
+def parse(text, groups):
+    group_dict = {}
+    for group in groups:
+        # The pattern is designed to capture text for each group letter
+        # It handles optional newlines and spaces around the brackets.
+        pattern = r"\[" + re.escape(group) + r"\](.*?)(?=\[\w\]|$)"
+        matches = re.findall(pattern, text, re.DOTALL)
+        # Removing leading/trailing whitespaces for each match
+        group_dict[group] = [match.strip() for match in matches]
+    return group_dict
+
+
 
 # Create a list to store the selected videos
 selected_playlists = []
+topic_context_dict = {}
 
 
-# Save the selected videos as a variable
-st.session_state["selected_playlists"] = selected_playlists
 
 st.title("💬  LOLA: Learn Online Like Actually")
 if "messages" not in st.session_state:
@@ -73,11 +87,10 @@ Ok I'm the student, let's begin!
         user_query=query, conversation=st.session_state.messages, system_prompt=system_prompt
     )
 
-    group_dict = parse(response_text, ["[S]", "[T]", "[B]"])
+    group_dict = parse(response_text, ["S", "T", "B"])
     # testing
     st.write(group_dict)
-    if group_dict is None:
-        # if the response has [D] - meaning we want to ask the user another question:
+    if group_dict is None: #todo check this
         # Update the session state messages with the assistant's response
         st.session_state.messages.append(
             {"role": "assistant", "content": response_text}
@@ -88,26 +101,41 @@ Ok I'm the student, let's begin!
 
         # else start finding out topics and descrition:
         # topics = list of topics
-    else:
+    #else:
         ################################################################
         for topic in st.session_state.topics:
             # do the loop for each topic
             # prompt 3 - for each topic compare it to the weaviate playlist context
             # if topic matches a playlist -> playlist_id = match
             # if doesn't match -> search yt, then prompt user for playlist
+             # prompt number 3
+            playlist_ids = get_yt_playlists(query, k=3)
+            system_prompt = f"""You are provided with a list of playlists, each with a unique identifier and a description. Your task is to determine if any of these playlists contain information that matches a specific topic.
+Given topic: Mudskipper migration patterns
+Playlists:
+ID: PLOrDN6HaH3OTqZDHNvn2N43FjZuKVqDHz, Description: 'Exploring the depths of marine biology and the behaviors of intertidal species.'
+ID: PLOrDN6HaH3OTqZDHN827223FjZ3o4yKVqDHz, Description: 'The fascinating world of amphibious creatures and their survival strategies.'
+ID: IBWIBFEWIjd3245782u4yi23jZuKVqDHz, Description: 'Understanding the ecosystem dynamics and animal migrations within mangrove forests.'
+Review each playlist description and identify if it closely matches the given topic. If a playlist's description matches the topic, output the playlist's ID next to [P]. If none of the playlist descriptions match the topic, simply output 'no'.
+
+What is your output?"""
+
+            # Get the response from the LLM call function
+            response_text, conversation, total_tokens, response = call_llm(
+                user_query=query, conversation=None, system_prompt=system_prompt
+            )
+            #todo how many playlists are we getting?
+            playlist_id = parse(response_text, ["[P]"])
 
             if playlist_id:
                 # we have the playlist with info
-                topic_context_dict = search_playlist(playlist_id, query, k=3)
+                topic_context_dict.append(search_playlist(playlist_id, query, k=3))
 
-                # Add relevant topic info to the prompt
-                # use like: You learned {context} about {topic} or something
-                system_prompt = f""" {topic_context_dict} I am an AI trained to talk to you! How can I assist you today?"""
             else:
                 # we need to search YT for a playlist and let a user choose stuff
                 youtube_query = group_dict.get("[T]")
                 youtube_query.append(group_dict.get("[S]"))
-                playlist_ids = get_yt_playlists(youtube_query, k=3)
+                playlist_ids = get_yt_playlist_texts(youtube_query, k=3)
                 # Display the videos and checkboxes in the sidebar
                 if playlist_ids is not None:
                     with st.sidebar:
@@ -146,22 +174,13 @@ Ok I'm the student, let's begin!
 
 # function names
 
-# parsing function
-import re
+# system prompt function
 
-
-def parse(text, groups):
-    group_dict = {}
-    for group in groups:
-        # The pattern is designed to capture text for each group letter
-        # It handles optional newlines and spaces around the brackets.
-        pattern = r"\[" + re.escape(group) + r"\](.*?)(?=\[\w\]|$)"
-        matches = re.findall(pattern, text, re.DOTALL)
-        # Removing leading/trailing whitespaces for each match
-        group_dict[group] = [match.strip() for match in matches]
-    return group_dict
-
-
+    
+    
+    
+    
+    
 # data is a dictionary that has like [s] : short descriptions, [T] : topic etc ...], [B] : behavior
 
 # data = parse_response(response)

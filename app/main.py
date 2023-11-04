@@ -121,7 +121,8 @@ Ok I'm the student, let's begin!
                 # Add relevant topic info to the prompt
                 # use like: You learned {context} about {topic} or something
                 system_prompt = f""" {topic_context_dict} I am an AI trained to talk to you! How can I assist you today?"""
-
+            else:
+                # we need to search YT for a playlist and let a user choose stuff
             
         
         

@@ -1,26 +1,29 @@
 # First
 import openai
 import streamlit as st
+import os
 
-#with st.sidebar:
-    
-    
-    
+openai.api_key = os.getenv("OPENAI_APIKEY")
+
+# with st.sidebar:
+# ask which video here
+
+
 st.title("💬 Chatbot")
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
-        {"role": "assistant", "content": "How can I help you?"}
+        {
+            "role": "assistant",
+            "content": "How can I help you? I can learn and teach you anything!",
+        }
     ]
 
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
 
 if prompt := st.chat_input():
-    if not openai_api_key:
-        st.info("Please add your OpenAI API key to continue.")
-        st.stop()
+    # main logic here
 
-    openai.api_key = openai_api_key
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
     response = openai.ChatCompletion.create(

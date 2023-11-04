@@ -1,4 +1,3 @@
-import openai
 import streamlit as st
 import os
 import requests
@@ -10,7 +9,6 @@ from app.utils.youtube import get_yt_playlists, get_yt_playlist_texts
 from app.utils.upload_videos import upload_videos
 from app.utils.openai_connector import call_llm
 
-openai.api_key = os.getenv("OPENAI_APIKEY")
 
 
 
@@ -27,8 +25,6 @@ def parse(text, groups):
         # Removing leading/trailing whitespaces for each match
         group_dict[group] = [match.strip() for match in matches]
     return group_dict
-
-
 
 # Create a list to store the selected videos
 selected_playlists = []
@@ -86,11 +82,12 @@ Ok I'm the student, let's begin!
     response_text, conversation, total_tokens, response = call_llm(
         user_query=query, conversation=st.session_state.messages, system_prompt=system_prompt
     )
+    #st.write(response_text)
 
     group_dict = parse(response_text, ["S", "T", "B"])
     # testing
-    st.write(group_dict)
-    if group_dict is None: #todo check this
+    st.write(group_dict["S"])
+    if group_dict["S"] == []: #todo check this
         # Update the session state messages with the assistant's response
         st.session_state.messages.append(
             {"role": "assistant", "content": response_text}
@@ -101,7 +98,7 @@ Ok I'm the student, let's begin!
 
         # else start finding out topics and descrition:
         # topics = list of topics
-    #else:
+    else:
         ################################################################
         for topic in st.session_state.topics:
             # do the loop for each topic
@@ -182,8 +179,7 @@ What is your output?"""
     
     
 # data is a dictionary that has like [s] : short descriptions, [T] : topic etc ...], [B] : behavior
-
-# data = parse_response(response)
+data = parse_response(response)
 
 # weaviate query for top k playlists:
 # get_top_k_playlists(query, k)

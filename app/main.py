@@ -4,10 +4,9 @@ import os
 import requests
 
 
-from app.utils.weaviate_connector import get_top_k_playlists
+from app.utils.queries import get_top_k_playlists, search_playlist
 from app.utils.youtube import get_yt_playlists
 from app.utils.upload_videos import upload_videos
-from app.utils.weaviate_connector import search_playlist
 
 
 openai.api_key = os.getenv("OPENAI_APIKEY")

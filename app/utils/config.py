@@ -10,3 +10,5 @@ MONGODB_DB = 'ai-server'
 MONGODB_COLLECTION = 'prompts'
 
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+
+YT_API_KEY = os.environ['YT_API_KEY']

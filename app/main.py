@@ -1,8 +1,14 @@
-# First
 import openai
 import streamlit as st
 import os
 import requests
+
+
+from app.utils.weaviate_connector import get_top_k_playlists
+from app.utils.youtube import get_yt_playlists
+from app.utils.upload_videos import upload_videos
+from app.utils.weaviate_connector import search_playlist
+
 
 openai.api_key = os.getenv("OPENAI_APIKEY")
 
@@ -54,20 +60,47 @@ if query := st.chat_input():
     st.chat_message("user").write(query)
 
     # prompt number 1
-    system_prompt = "I am an AI trained to talk to you! How can I assist you today?"
+    system_prompt = f"""You’re the chat module for the Learn Anything Tutor. Your job is to have a super natural, conversational chat with the student and identify what they want to learn about. Don't ask multiple questions at once, take it turn by turn like a human would talk to another human. Require that they give you very specific details about what they want to work on, detailing their experience level and their purpose in learning that material. Also work to understand how they learn best: what kind of teaching style do they want from you as the AI tutor (this mostly defines the tone of the text you write, so don't suggest crazy things like interactive diagramming). Don't waste my time diving infinitely into what I want to learn, you'll know when you know what to search for. 
+
+Once you’ve identified what the student wants to learn about and why (giving you the right information to generate a tutor bot for them), you’ll output a few pieces of information in a very specific way, to initialize the tutor bot. You’ll decide when you’re ready to do this and make sure you include the [S], [T] and [B] labels.
+
+Here’s the format you’ll output in once you’ve had a conversation really understanding the student and their purpose for building the tutor. It should be labeled with [S], [T],[T],[T], and [B].
+
+Example final output from our conversation:
+[S]
+Making chocolate chips cookies from scratch, including collecting the right ingredients, cooking them right and preparing them for a picnic. The user is looking to get ready for an upcoming picnic with friends, and is learning to make chocolate chip cookies for the first time.
+
+[T]  
+"Ingredients for chocolate chip cookies"
+[T] 
+"Cooking chocolate chip cookies"
+[T] 
+"How to prepare cookies for a picnic."
+[B] 
+You'll be a cookie-making tutor who breaks things down step by steps, checks in on the user at every step to make sure they understand, and follows up on questions, calls back ideas and remembers the conversation history. 
+----
+Make sure you end up putting out those letters so I can parse them out and initialize the chatbot. The topics sections of your output are going to be used to search Youtube, so make sure they are exactly what I'd need to search for to find the information. Essentially, you use the T labeled sections to make Youtube searches for me.  Good Youtube searches are super precise.
+
+If, for example, I want to learn how to tame monkeys, I might want a topic "How to tame a monkey" or "How to have a pet chimpanzee" if that's what I specified. These topics are important and you should take care to do them precisely.
+
+Ok I'm the student, let's begin!
+
+"""
 
     # Get the response from the LLM call function
     response_text, conversation, total_tokens, response = call_llm(
         user_query=query, conversation=None, system_prompt=system_prompt
     )
-    
-    group_dict = parse(response_text, ["[S]","[T]","[B]"])
-    
-    
+
+    group_dict = parse(response_text, ["[S]", "[T]", "[B]"])
+    #testing
+    st.write(group_dict)
     if group_dict is None:
         # if the response has [D] - meaning we want to ask the user another question:
         # Update the session state messages with the assistant's response
-        st.session_state.messages.append({"role": "assistant", "content": response_text})
+        st.session_state.messages.append(
+            {"role": "assistant", "content": response_text}
+        )
 
         # Write the assistant response to the chat
         st.chat_message("assistant").write(response_text)
@@ -90,11 +123,17 @@ if query := st.chat_input():
                 # use like: You learned {context} about {topic} or something
                 system_prompt = f""" {topic_context_dict} I am an AI trained to talk to you! How can I assist you today?"""
 
+            
+        
+        
+        
         # Get the response from the LLM call function
         response_text, conversation, total_tokens, response = call_llm(
             user_query=query, conversation=None, system_prompt=system_prompt
         )
-        st.session_state.messages.append({"role": "assistant", "content": response_text})
+        st.session_state.messages.append(
+            {"role": "assistant", "content": response_text}
+        )
 
         # Write the assistant response to the chat
         st.chat_message("assistant").write(response_text)
@@ -128,7 +167,7 @@ def parse(text, groups):
 # get_yt_playlists(query, k)
 
 # chunk and upload videos from playlist
-# upload_playlist_videos(playlist_id)
+# upload_videos(playlist_id)
 
 # search through playlists for topic
 # search_playlist(playlist_id, query, k)

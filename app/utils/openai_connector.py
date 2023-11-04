@@ -129,7 +129,7 @@ def get_video_topics(transcript):
                         topics.append({
                             "topic": topic[0],
                             "text": text,
-                            "startTime": float(timestamp)
+                            "startTime": int(float(timestamp))
                         })
                 print(f"Parsed {len(topics)} topics from transcript")
 

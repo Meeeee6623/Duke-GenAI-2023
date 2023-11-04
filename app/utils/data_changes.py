@@ -3,6 +3,48 @@ Contains functions that update, create, or delete data in Weaviate
 """
 from .weaviate_classes import default_class
 from .weaviate_connector import db
+from app.utils.queries import check_playlist
+
+
+def create_playlist(playlist_id: str, title: str, description: str):
+    """
+    Create a playlist in Weaviate
+    """
+    if check_playlist(playlist_id):
+        return {"error": "Playlist already exists"}
+    new_playlist = {
+        "playlistID": playlist_id,
+        "title": title,
+        "description": description,
+    }
+    try:
+        db.data_object.create(data_object=new_playlist, class_name="YoutubePlaylist")
+    except Exception as e:
+        print(e)
+        return {"error": "Playlist already exists"}
+    return {"response": "Playlist created successfully"}
+
+
+def upload_topic(topic: dict):
+    """
+    Upload a topic to Weaviate
+    Topics have:
+    - title (video title)
+    - description
+    - playlistID
+    - videoID
+    - text (real information returned)
+    - startTime (start time of the video)
+    - topic (descriptive topic name, searched)
+    :param topic:
+    :return:
+    """
+    try:
+        db.data_object.create(data_object=topic, class_name="YoutubeTopic")
+    except Exception as e:
+        print(e)
+        return {"error": "Topic already exists"}
+    return {"response": "Topic created successfully"}
 
 
 def create_default_class(class_name: str):

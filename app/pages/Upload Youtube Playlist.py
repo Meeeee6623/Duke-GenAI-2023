@@ -1,14 +1,19 @@
+import subprocess
+
 import streamlit as st
 
 from app.utils.youtube import get_playlist_info, get_videos
 from app.utils.openai_connector import call_llm
+from app.utils.data_changes import create_playlist
+from app.utils.upload_videos import upload_videos
 
 st.set_page_config(page_title="Youtube Playlist Manual Uploader", page_icon=":notes:")
 
 st.title('Youtube Playlist Manual Uploader')
 
 playlist_url = st.text_input("Playlist URL", "")
-if st.button("Get Playlist Info"):
+
+if st.toggle("Get Playlist Info"):
     playlist_id = playlist_url.split("list=")[1]
 
     # get playlist title with youtube API
@@ -37,8 +42,29 @@ if st.button("Get Playlist Info"):
     Keep everything succinct, and prefer to add "buzz words" or "key words" over long sentence descriptions.
     Avoid starting with "This playlist provides..." or "This playlist is about...". Just get right into the content
     """)
-    st.success("Done! Description:")
+    st.success("Done making description!")
     # get playlist description and make user editable
-    playlist_description = st.text_area("Playlist Description", synthetic_description)
-
-    # chunk and upload videos
+    st.write(f"Title: {playlist_info['title']}")
+    playlist_description = st.text_area("Playlist Description (editable)", synthetic_description[0])
+    if st.toggle("Upload Playlist"):
+        st.write("Uploading playlist...")
+        # upload playlist to weaviate
+        result = create_playlist(playlist_id, playlist_info['title'], playlist_description)
+        if "error" in result:
+            st.write("Playlist already exists!")
+        else:
+            st.success("Playlist uploaded successfully!")
+        st.balloons()
+        if st.toggle("Chunk and Upload Videos"):
+            st.write("Chunking and uploading videos...")
+            # chunk videos and upload to weaviate
+            command = ["python", '-u', 'app/utils/upload_videos.py', f'{playlist_id}']
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                       universal_newlines=True)
+            while process.poll() is None:
+                line = process.stdout.readline()
+                if not line:
+                    continue
+                st.write(line.strip())
+            st.success("Videos uploaded successfully!")
+            st.balloons()

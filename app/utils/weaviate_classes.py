@@ -53,6 +53,11 @@ yt_topic_class = {
             "dataType": ["string"],
         },
         {
+            "name": "playlistID",
+            "description": "ID of the Youtube Playlist that the video belongs to",
+            "dataType": ["string"],
+        },
+        {
             "name": "text",
             "description": "The relevant text for the topic.",
             "dataType": ["string"],

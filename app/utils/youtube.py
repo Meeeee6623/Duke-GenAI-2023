@@ -6,7 +6,7 @@ from app.utils.config import YT_API_KEY
 yt = build('youtube', 'v3', developerKey=YT_API_KEY)
 
 
-def search_playlists(query, num_playlists=5):
+def get_yt_playlists(query, num_playlists=5):
     # get playlist IDs, title, description, and thumbnail for top 5 playlists
     response = yt.search().list(part="snippet", q=query, type="playlist", maxResults=num_playlists).execute()
     playlists = []

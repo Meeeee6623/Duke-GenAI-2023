@@ -18,7 +18,7 @@ def get_yt_playlists(query, num_playlists=5):
     for item in response["items"]:
         playlists.append(
             {
-                "id": item["id"]["playlistId"],
+                "id": item["id"],
                 "title": item["snippet"]["title"],
                 "description": item["snippet"]["description"],
                 "thumbnail": item["snippet"]["thumbnails"]["default"]["url"],
@@ -79,13 +79,14 @@ def get_transcript(videoID):
 
 def get_playlist_info(playlistID):
     """
-    Get playlist title, description, and thumbnail from playlist ID
+    Get playlist title, description, id, and thumbnail from playlist ID
     :param playlistID:
     :return:
     """
     response = yt.playlists().list(part="snippet", id=playlistID).execute()
     playlist = response["items"][0]
     return {
+        "id": playlist["id"],
         "title": playlist["snippet"]["title"],
         "description": playlist["snippet"]["description"],
         "thumbnail": playlist["snippet"]["thumbnails"]["default"]["url"],

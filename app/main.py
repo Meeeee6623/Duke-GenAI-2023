@@ -2,10 +2,9 @@
 import openai
 import streamlit as st
 import os
+import requests
 
 openai.api_key = os.getenv("OPENAI_APIKEY")
-
-import requests
 
 # Define the YouTube video IDs
 video_ids = ["video1", "video2", "video3"]
@@ -56,3 +55,16 @@ if prompt := st.chat_input():
     msg = response.choices[0].message
     st.session_state.messages.append(msg)
     st.chat_message("assistant").write(msg.content)
+
+# function names
+# weaviate query for top k playlists:
+# get_top_k_playlists(query, k)
+
+# youtube search for top k playlists:
+# get_yt_playlists(query, k)
+
+# chunk and upload videos from playlist
+# upload_playlist_videos(playlist_id)
+
+# search through playlists for topic
+# search_playlist(playlist_id, query, k)

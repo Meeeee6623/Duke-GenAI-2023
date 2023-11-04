@@ -31,7 +31,7 @@ def parse(text, groups):
 # Create a list to store the selected videos
 selected_playlists = []
 topic_context_dict = {}
-
+end = False
 
 # ALL RETRIEVAL
 # Prompt to start convo
@@ -105,7 +105,7 @@ if query := st.chat_input():
         )
 
         # Write the assistant response to the chat
-        st.chat_message("assistant").write(response_text)
+        # st.chat_message("assistant").write(response_text)
 
         # else start finding out topics and descrition:
         # topics = list of topics
@@ -163,20 +163,42 @@ if query := st.chat_input():
                     st.write(f"loading in video data from the playlist {playlist_id}")
                     threading.Thread(target=upload_videos, args=(playlist_id,)).start()
 
-        # # Get the response from the LLM call function
-        # response_text, conversation, total_tokens, response = call_llm(
-        #     user_query=query,
-        #     conversation=st.session_state.messages,
-        #     system_prompt=system_prompt,
-        # )
-        # st.session_state.messages.append(
-        #     {"role": "assistant", "content": response_text}
-        # )
+        # Get the response from the LLM call function
+        response_text, conversation, total_tokens, response = call_llm(
+            user_query=query,
+            conversation=st.session_state.messages,
+            system_prompt=system_prompt,
+        )
+        st.session_state.messages.append(
+            {"role": "assistant", "content": response_text}
+        )
 
-        # # Write the assistant response to the chat
-        # st.chat_message("assistant").write(response_text)
+        # Write the assistant response to the chat
+        st.chat_message("assistant").write(response_text)
+        end = True
 
+# As long as query not empty make it input
+while end:
+    if query := st.chat_input():
+        # Run the conversation with the user
+        st.session_state.messages.append({"role": "user", "content": query})
+        st.chat_message("user").write(query)
 
+        # Get the response from the LLM call function
+        response_text, conversation, total_tokens, response = call_llm(
+            user_query=query,
+            conversation=st.session_state.messages,  # Dropped system prompt here --> Bug prone?
+        )
+
+        # Update the session state messages with the assistant's response
+        st.session_state.messages.append(
+            {"role": "assistant", "content": response_text}
+        )
+
+        # Write the assistant response to the chat
+        st.chat_message("assistant").write(response_text)
+    else:
+        break
 # function names
 
 # data is a dictionary that has like [s] : short descriptions, [T] : topic etc ...], [B] : behavior

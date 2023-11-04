@@ -6,7 +6,7 @@ from app.utils.weaviate_connector import db
 
 # function names
 # weaviate query for top k playlists:
-def get_top_k_playlists(query, k):
+def get_top_k_playlists(query, k, threshold=None):
     """
     Gets the top k playlists from weaviate
     :param query: the query to search for
@@ -16,6 +16,8 @@ def get_top_k_playlists(query, k):
     near_text = {
         "concepts": [f"{query}"],
     }
+    if threshold is not None:
+        near_text["certainty"] = threshold
     playlists = (
         db.query.get("YoutubePlaylist", ["title", "description"])
         .with_limit(k)

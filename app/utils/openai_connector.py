@@ -3,12 +3,21 @@ import time
 import openai
 import tiktoken
 
+import streamlit as st
+
 from app.utils.config import OPENAI_API_KEY
 
 openai.api_key = OPENAI_API_KEY
 
-def call_llm(user_query, conversation=None, system_prompt=None, model="gpt-3.5-turbo", temperature=0) -> tuple[
-    str, list[dict], int, openai.ChatCompletion]:
+
+@st.cache_data()
+def call_llm(
+        user_query,
+        conversation=None,
+        system_prompt=None,
+        model="gpt-4",
+        temperature=0,
+) -> tuple[str, list[dict], int, openai.ChatCompletion]:
     """
     :param user_query:
     :param conversation:
@@ -17,7 +26,7 @@ def call_llm(user_query, conversation=None, system_prompt=None, model="gpt-3.5-t
     """
     if conversation is None:
         conversation = []
-    if system_prompt is not None:
+    if system_prompt is not None and len(conversation) > 0:
         if conversation[0]["role"] != "system":
             conversation.insert(0, {"role": "system", "content": system_prompt})
 
@@ -75,7 +84,6 @@ def get_video_topics(transcript):
 
     topics = []
     for transcript_string in transcript_strings:
-
         prompt = f"""Please assist me in meticulously organizing this YouTube transcript.
 
                 Chunking: Dissect the transcript into individual, question-based categories, ensuring each segment maintains sufficient length and detail.
@@ -113,9 +121,13 @@ def get_video_topics(transcript):
             try:
                 response = openai.ChatCompletion.create(
                     model="gpt-3.5-turbo-16k",
-                    messages=[{"role": "system",
-                               "content": "You are the YouTube chunker. Your job is to chunk youtube video transcripts into specific topics, to be searched through. "},
-                              {"role": "user", "content": prompt}],
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are the YouTube chunker. Your job is to chunk youtube video transcripts into specific topics, to be searched through. ",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
                 )
                 topics_raw = response.choices[0]["message"]["content"]
                 # parse topics
@@ -126,11 +138,13 @@ def get_video_topics(transcript):
                         # text is everything after the timestamp
                         s_index = topic[1].find("s")
                         text = topic[1][s_index + 1:].strip()
-                        topics.append({
-                            "topic": topic[0],
-                            "text": text,
-                            "startTime": int(float(timestamp))
-                        })
+                        topics.append(
+                            {
+                                "topic": topic[0],
+                                "text": text,
+                                "startTime": int(float(timestamp)),
+                            }
+                        )
                 print(f"Parsed {len(topics)} topics from transcript")
 
                 return topics

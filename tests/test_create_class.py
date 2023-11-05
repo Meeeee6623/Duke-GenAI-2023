@@ -1,3 +1,3 @@
-from app.utils.weaviate_connector import create_default_class
+from app.utils.data_changes import create_playlist
 
-create_default_class("test_class")
+create_playlist("PL1NPvyLUhgXgLqPFN2PbHHx3kd_BkdSvL", "test", "test")

@@ -1,12 +1,12 @@
 """
 Contains various weaviate queries relating to classes
 """
-from .weaviate_connector import db
+from app.utils.weaviate_connector import db
 
 
 # function names
 # weaviate query for top k playlists:
-def get_top_k_playlists(query, k):
+def get_top_k_playlists(query, k, threshold=None):
     """
     Gets the top k playlists from weaviate
     :param query: the query to search for
@@ -16,12 +16,30 @@ def get_top_k_playlists(query, k):
     near_text = {
         "concepts": [f"{query}"],
     }
-    playlists = (db.query.get("YoutubePlaylist", ["title", "description"])
-    .with_limit(k)
-    .with_near_text(near_text)
-    .do()["data"]["Get"]["YoutubePlaylist"]
+    if threshold is not None:
+        near_text["certainty"] = threshold
+    playlists = (
+        db.query.get("YoutubePlaylist", ["title", "description", "playlistID"])
+        .with_limit(k)
+        .with_near_text(near_text)
+        .do()["data"]["Get"]["YoutubePlaylist"]
     )
     return playlists
+
+
+def get_top_k_topics(query, k, threshold=None):
+    near_text = {
+        "concepts": [f"{query}"],
+    }
+    if threshold is not None:
+        near_text["certainty"] = threshold
+    topics = (
+        db.query.get("YoutubeTopic", ["topic", "text", "playlistID", "videoID"])
+        .with_limit(k)
+        .with_near_text(near_text)
+        .do()["data"]["Get"]["YoutubeTopic"]
+    )
+    return topics
 
 
 # search through playlists for topic
@@ -41,11 +59,12 @@ def search_playlist(playlist_id, query, k):
         "operator": "Equal",
         "valueString": playlist_id,
     }
-    videos = (db.query.get("YoutubeTopic", ["title", "description"])
-    .with_limit(k)
-    .with_where(where_filter)
-    .with_near_text(near_text)
-    .do()["data"]["Get"]["YoutubeVideo"]
+    videos = (
+        db.query.get("YoutubeTopic", ["title", "description"])
+        .with_limit(k)
+        .with_where(where_filter)
+        .with_near_text(near_text)
+        .do()["data"]["Get"]["YoutubeVideo"]
     )
     return videos
 
@@ -116,6 +135,7 @@ def check_video(video_id):
         return False
     return False
 
+
 def check_playlist(playlist_id):
     """
     Check if a playlist exists in weaviate
@@ -135,4 +155,4 @@ def check_playlist(playlist_id):
     except Exception as e:
         print(e)
         return False
-    return True
+    return False

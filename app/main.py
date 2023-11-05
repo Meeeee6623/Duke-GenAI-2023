@@ -120,7 +120,7 @@ if query := st.chat_input():
             st.session_state.topics = group_dict["T"]
             ################################################################
             st.session_state["stage"] = "playlist"
-    if st.session_state["stage"] == "playlist":
+if st.session_state["stage"] == "playlist": 
         for topic in st.session_state.topics:
             if topic in st.session_state.topics_covered.keys():
                 continue
@@ -202,6 +202,8 @@ if st.session_state["stage"] == "ask_for_playlist":
     st.session_state.stage = "playlist"
     st.rerun()
 
+
+st.session_state["stage"] == "end"
 # next, for every topic playlist pair in topics covered, assemble topic information
 # """for topic in st.session_state.topics_covered:
 #     st.write(topic)
@@ -238,20 +240,20 @@ if st.session_state["stage"] == "ask_for_playlist":
 #                 threading.Thread(target=upload_videos, args=(playlist_id,)).start()
 
 
-# Display a message while threads are running
-if st.session_state["video_threads"]:
-    if all_threads_done():
-        st.success("All video uploads completed!")
-        # Clear the list if needed
-        st.session_state["video_threads"].clear()
-    else:
-        st.info("Learning from videos...")
+# # Display a message while threads are running
+# if st.session_state["video_threads"]:
+#     if all_threads_done():
+#         st.success("All video uploads completed!")
+#         # Clear the list if needed
+#         st.session_state["video_threads"].clear()
+#     else:
+#         st.info("Learning from videos...")
 
 # Additional logic that should run after all threads are complete
 # This block will run in the next iteration after all threads are done
-if not st.session_state["video_threads"]:
-    # Your code to execute after all uploads are done
-    pass
+# if not st.session_state["video_threads"]:
+#     # Your code to execute after all uploads are done
+#     pass
 
 #         # we have the playlist with info
 #         top_topic = search_playlist(playlist_id, query, k=1)
@@ -282,7 +284,8 @@ if not st.session_state["video_threads"]:
 #     st.session_state["end"] = True
 
 # As long as query not empty make it input
-while st.session_state["end"]:
+while st.session_state["stage"] == "end":
+
     if query := st.chat_input():
         # Run the conversation with the user
         st.session_state.messages.append({"role": "user", "content": query})

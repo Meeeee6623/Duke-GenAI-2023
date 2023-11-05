@@ -3,17 +3,20 @@ import time
 import openai
 import tiktoken
 
+import streamlit as st
+
 from app.utils.config import OPENAI_API_KEY
 
 openai.api_key = OPENAI_API_KEY
 
 
+@st.cache_data()
 def call_llm(
-    user_query,
-    conversation=None,
-    system_prompt=None,
-    model="gpt-4",
-    temperature=0,
+        user_query,
+        conversation=None,
+        system_prompt=None,
+        model="gpt-4",
+        temperature=0,
 ) -> tuple[str, list[dict], int, openai.ChatCompletion]:
     """
     :param user_query:
@@ -134,7 +137,7 @@ def get_video_topics(transcript):
                         timestamp = topic[1].split("s")[0].strip()
                         # text is everything after the timestamp
                         s_index = topic[1].find("s")
-                        text = topic[1][s_index + 1 :].strip()
+                        text = topic[1][s_index + 1:].strip()
                         topics.append(
                             {
                                 "topic": topic[0],

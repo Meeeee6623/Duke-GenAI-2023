@@ -1,3 +1,4 @@
+import streamlit as st
 from googleapiclient.discovery import build
 from youtube_transcript_api import YouTubeTranscriptApi
 
@@ -6,6 +7,7 @@ from app.utils.config import YT_API_KEY
 yt = build("youtube", "v3", developerKey=YT_API_KEY)
 
 
+@st.cache_data()
 def get_yt_playlists(query, k=5):
     # get playlist IDs, title, description, and thumbnail for top 5 playlists
     response = (

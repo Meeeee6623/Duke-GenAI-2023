@@ -19,12 +19,27 @@ def get_top_k_playlists(query, k, threshold=None):
     if threshold is not None:
         near_text["certainty"] = threshold
     playlists = (
-        db.query.get("YoutubePlaylist", ["title", "description"])
+        db.query.get("YoutubePlaylist", ["title", "description", "playlistID"])
         .with_limit(k)
         .with_near_text(near_text)
         .do()["data"]["Get"]["YoutubePlaylist"]
     )
     return playlists
+
+
+def get_top_k_topics(query, k, threshold=None):
+    near_text = {
+        "concepts": [f"{query}"],
+    }
+    if threshold is not None:
+        near_text["certainty"] = threshold
+    topics = (
+        db.query.get("YoutubeTopic", ["topic", "text", "playlistID", "videoID"])
+        .with_limit(k)
+        .with_near_text(near_text)
+        .do()["data"]["Get"]["YoutubeTopic"]
+    )
+    return topics
 
 
 # search through playlists for topic
@@ -140,4 +155,4 @@ def check_playlist(playlist_id):
     except Exception as e:
         print(e)
         return False
-    return True
+    return False
